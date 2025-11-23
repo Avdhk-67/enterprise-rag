@@ -1,0 +1,44 @@
+aws:
+  region: us-east-1
+  credentials:
+    # Use environment variables or IAM role
+    use_credentials_file: false
+    use_iam_role: true  # Recommended for EC2/Lambda
+  
+  s3:
+    bucket_name: your-company-documents-rag
+    prefixes:
+      raw_documents: raw-documents
+      processed: processed
+      metadata: metadata
+    encryption: SSE-S3
+    versioning: true
+  
+  bedrock:
+    region: us-east-1
+    models:
+      generation:
+        model_id: anthropic.claude-3-sonnet-20240229-v1:0
+        model_name: Claude 3 Sonnet
+      fast_generation:
+        model_id: anthropic.claude-3-haiku-20240307-v1:0
+        model_name: Claude 3 Haiku
+      embedding:
+        model_id: amazon.titan-embed-text-v1
+        model_name: Titan Embeddings
+        dimensions: 1536
+  
+  vector_db:
+    type: opensearch  # Options: opensearch, pinecone, faiss
+    opensearch:
+      endpoint: https://your-collection-endpoint.us-east-1.aoss.amazonaws.com
+      index_name: enterprise-rag-index
+      dimension: 1536
+    pinecone:
+      api_key_env: PINECONE_API_KEY
+      environment: us-east-1-aws
+      index_name: enterprise-rag
+    faiss:
+      index_path: ./data/faiss_index
+      dimension: 1536
+
