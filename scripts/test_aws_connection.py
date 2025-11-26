@@ -27,22 +27,50 @@ def test_s3_connection():
 
 
 def test_bedrock_connection():
-    """Test Bedrock connection and model access."""
+    """Test Bedrock connection and model access by doing a small inference."""
+    import json
+    import botocore.exceptions
+    
     print("\nTesting Bedrock connection...")
     try:
         bedrock_client = get_bedrock_client()
         config = get_aws_config()
         model_id = config.get("bedrock", {}).get("models", {}).get("generation", {}).get("model_id")
-        
-        # Try to list foundation models
-        bedrock_agent = bedrock_client._client_config.service_model.service_name
-        print(f"✅ Bedrock client initialized! Model: {model_id}")
-        print("   Note: Actual model invocation will be tested during first query.")
+
+        test_input = {
+            "anthropic_version": "bedrock-2023-05-31",
+            "max_tokens": 20,
+            "messages": [
+             {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "Hello from test script!"
+                }
+            ]
+        }
+    ],
+    "max_tokens": 20
+}
+
+
+        response = bedrock_client.invoke_model(
+            modelId=model_id,
+            body=json.dumps(test_input),
+            contentType="application/json"
+        )
+
+        print(f"✅ Bedrock connection successful! Model: {model_id}")
         return True
-    except Exception as e:
-        print(f"❌ Bedrock connection failed: {str(e)}")
-        print("   Make sure you have requested model access in Bedrock console.")
+
+    except botocore.exceptions.ClientError as e:
+        print(f"❌ Bedrock client error: {e}")
         return False
+    except Exception as e:
+        print(f"❌ Bedrock connection failed: {e}")
+        return False
+
 
 
 def test_vector_db_connection():

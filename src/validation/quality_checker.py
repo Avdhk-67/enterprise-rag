@@ -36,14 +36,14 @@ class QualityChecker:
     def check_grounding(self, answer: str, context: str) -> Dict:
         """Check if answer is grounded in the provided context."""
         prompt = f"""Analyze if the following answer is grounded in the provided context.
-
+        
 Context:
 {context}
 
 Answer:
 {answer}
 
-Respond with JSON:
+Respond with JSON only:
 {{
     "is_grounded": true/false,
     "confidence": 0.0-1.0,
@@ -51,24 +51,21 @@ Respond with JSON:
 }}"""
         
         try:
-            response = self.llm.generate(prompt)
-            # Parse JSON response (simplified - in production, use proper JSON parsing)
-            # For now, return a basic check
-            context_lower = context.lower()
-            answer_lower = answer.lower()
-            
-            # Simple heuristic: check if key terms from answer appear in context
-            answer_words = set(answer_lower.split())
-            context_words = set(context_lower.split())
-            overlap = len(answer_words.intersection(context_words)) / max(len(answer_words), 1)
-            
-            is_grounded = overlap > 0.3 and "not available" not in answer_lower and "not in the context" not in answer_lower
-            
-            return {
-                'is_grounded': is_grounded,
-                'confidence': min(overlap * 2, 1.0),
-                'reason': f'Term overlap: {overlap:.2f}'
-            }
+            response_text = self.llm.generate(prompt)
+            # Find JSON in response
+            start = response_text.find('{')
+            end = response_text.rfind('}') + 1
+            if start != -1 and end != -1:
+                import json
+                result = json.loads(response_text[start:end])
+                return result
+            else:
+                # Fallback if JSON parsing fails
+                return {
+                    'is_grounded': False,
+                    'confidence': 0.0,
+                    'reason': 'Could not parse LLM response'
+                }
         except Exception as e:
             return {
                 'is_grounded': False,

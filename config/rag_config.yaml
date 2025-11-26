@@ -23,7 +23,7 @@ rag:
   # Retrieval Configuration
   retrieval:
     top_k: 5
-    similarity_threshold: 0.7
+    similarity_threshold: 0.2
     rerank: false  # Set to true to enable reranking
     rerank_model: cross-encoder/ms-marco-MiniLM-L-6-v2
   

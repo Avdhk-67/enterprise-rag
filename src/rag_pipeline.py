@@ -14,11 +14,17 @@ class RAGPipeline:
         self.llm = BedrockLLM()
         self.quality_checker = QualityChecker()
         self.config = get_rag_config()
+        # Initialize QueryRewriter
+        from src.processing.query_rewriter import QueryRewriter
+        self.query_rewriter = QueryRewriter()
     
     def query(self, question: str, top_k: Optional[int] = None) -> Dict:
         """Process a query through the RAG pipeline."""
-        # Step 1: Retrieve relevant documents
-        retrieved_docs = self.vector_store.search(question, top_k=top_k)
+        # Step 0: Rewrite query
+        rewritten_query = self.query_rewriter.rewrite_query(question)
+        
+        # Step 1: Retrieve relevant documents using rewritten query
+        retrieved_docs = self.vector_store.search(rewritten_query, top_k=top_k)
         
         if not retrieved_docs:
             return {
@@ -28,11 +34,14 @@ class RAGPipeline:
                 'validation': {
                     'is_valid': False,
                     'reason': 'No relevant documents found'
-                }
+                },
+                'original_query': question,
+                'rewritten_query': rewritten_query,
+                'retrieved_docs_count': 0
             }
         
-        # Step 2: Generate answer with sources
-        generation_result = self.llm.generate_with_sources(question, retrieved_docs)
+        # Step 2: Generate answer with sources using CoT
+        generation_result = self.llm.generate_with_sources(question, retrieved_docs, use_cot=True)
         
         # Step 3: Validate response
         context = "\n\n".join([doc['text'] for doc in retrieved_docs])
@@ -50,7 +59,9 @@ class RAGPipeline:
             'context_used': generation_result['context_used'],
             'confidence': validation['overall_score'],
             'validation': validation,
-            'retrieved_docs_count': len(retrieved_docs)
+            'retrieved_docs_count': len(retrieved_docs),
+            'original_query': question,
+            'rewritten_query': rewritten_query
         }
     
     def ingest_documents(self, documents: List[Dict]):
