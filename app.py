@@ -47,19 +47,7 @@ class IngestionResponse(BaseModel):
     status: str
 
 
-@app.get("/")
-async def root():
-    """Root endpoint."""
-    return {
-        "message": "Enterprise Document QA and Search Assistant API",
-        "version": "1.0.0",
-        "endpoints": {
-            "query": "/query",
-            "ingest_s3": "/ingest/s3",
-            "ingest_file": "/ingest/file",
-            "health": "/health"
-        }
-    }
+
 
 
 @app.get("/health")
